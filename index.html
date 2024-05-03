@@ -10,7 +10,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>image2cpp</title>
+  <title>modified image2cpp</title>
   <script src="./js/dithering.js" defer></script>
   <script src="./js/script.js" defer></script>
   <link rel="stylesheet" href="./css/style.css">
@@ -18,18 +18,10 @@
 <body>
   <div class="wrapper">
     <section class="section">
-      <h1>image2cpp</h1>
-      <p><strong>image2cpp</strong> is a simple tool to change images into byte arrays (or arrays back into an images) for use with (monochrome) displays such as OLEDs on your Arduino or Raspberry Pi.<br>
-        It was originally made to work with the Adafruit OLED library (for which your can find an example sketch for Arduino <a href="https://github.com/javl/image2cpp/blob/master/oled_example/oled_example.ino" target="_blank">here</a>) but
-        has been expanded by the community to be useful in all kind of (embedded) projects.</p>
-      <p>More info (and credits) can be found in the <a href="https://github.com/javl/image2cpp" target="_blank">Github repository</a>. This is also where you can report any <a href="https://github.com/javl/image2cpp/issues" target="_blank">issues</a> you might come across.</p>
-      <p class="sp-block">
-        Did you find this tool useful? Feel free to support my open source software on Github<br />
-        <a href="https://github.com/sponsors/javl" target="_blank">
-          <img src="https://img.shields.io/github/sponsors/javl?label=Sponsor&logo=GitHub" alt="GitHub Sponsor">
-        </a>
-
-      </p>
+      <h1>modified image2cpp</h1>
+      A modification ot the <a href="https://github.com/javl/image2cpp" target="_blank"> Image2CPP Github repository</a> to fit my personal style of
+      a picture output file for embedded systems. Added a RGB332 target.
+      I highly recommend to, if needed, modify the original source.
     </section>
 
     <section class="section bottom-divider">
@@ -39,10 +31,13 @@
           <div class="note upload-note">All processing is done locally in your browser; your images are not uploaded or stored anywhere online.</div>
           <input type="file" id="file-input" name="file-input" multiple/><br />
         </div>
+        <!--
         <div class="column column-center">
           <h2 class="sub-section-title">or</h2>
         </div>
+      -->
         <div class="column column-right">
+          <!--
           <h2 class="sub-section-title">1. Paste byte array</h2>
           <textarea id="byte-input" class="byte-input"></textarea><br />
           <div class="text-input-size">
@@ -54,7 +49,20 @@
             <button onclick="handleTextInput('vertical')">Read as vertical</button>
           </div>
           <div class="note">Read images appear at step 3 below</div>
+        -->
+
+        <div class="column column-right">
+          <h2 class="sub-section-title">Header to add</h2>
+          <textarea id="include_input" class="byte-input">
+//--------------------------------------------------------------
+// Includes
+//--------------------------------------------------------------
+#include <inttypes.h>
+#include "main.h"
+
+          </textarea><br />
         </div>
+        </div>        
       </section>
     </section>
 
@@ -117,8 +125,8 @@
             <div class="table-cell"><label for="scale">Scaling:</label></div>
             <div class="table-cell">
               <select id="scale" name="scale" onchange="updateInteger('scale')">
-                <option value="1">original size</option>
-                <option value="2">scale to fit, keeping proportions</option>
+                <option value="1">scale to fit, keeping proportions</option>
+                
                 <option value="3">stretch to fill canvas</option>
                 <option value="4">stretch to fill canvas horizontally</option>
                 <option value="5">stretch to fill canvas vertically</option>
@@ -186,6 +194,7 @@
             <div class="table-cell"><label for="outputFormat">Code output format</label></div>
             <div class="table-cell">
               <select id="outputFormat" name="outputFormat" onchange="updateOutputFormat(this)">
+                <option value="header_malte">Header withh Include inform.</option>
                 <option value="plain">Plain bytes</option>
                 <option value="arduino">Arduino code</option>
                 <option value="arduino_single">Arduino code, single bitmap</option>
@@ -207,6 +216,9 @@
                   <br />
                   <i>First ASCII character</i> value is used only if a glyph identifier of length equal to 1 is not provided for each image. The value itself will be incremented by 1 for each glyph.
                 </div>
+                <div data-caption="header_malte">
+                 My description
+                </div>
               </div>
               <div id="extra-settings-container">
                 <div id="adafruit-gfx-settings" class="table nested-table">
@@ -227,7 +239,7 @@
                   <div class="table-row">
                     <div class="table-cell"><label>Identifier/Prefix:</label></div>
                     <div class="table-cell">
-                      <input id="identifier" class="text-input" type="text" name="identifier" onchange="" value="epd_bitmap_"/>
+                      <input id="identifier" class="text-input" type="text" name="identifier" onchange="" value=""/>
                     </div>
                   </div>
                 </div>
@@ -241,9 +253,9 @@
               <select id="drawMode" name="drawMode" onchange="updateDrawMode(this)">
                 <option value="horizontal1bit">Horizontal - 1 bit per pixel</option>
                 <option value="vertical1bit">Vertical - 1 bit per pixel</option>
-                <option value="horizontal565">Horizontal - 2 bytes per pixel (565)</option>
+                <option value="horizontal565" selected>Horizontal - 2 bytes per pixel (565)</option>
+                <option value="horizontal332">RGB332</option>
                 <option value="horizontalAlpha">Horizontal - 1 bit per pixel alpha map</option>
-                <option value="horizontal888">Horizontal - 3 bytes per pixel (rgb888</option>
                 <option value="horizontal888">Horizontal - 3 bytes per pixel (rgb888)</option>
               </select>
 

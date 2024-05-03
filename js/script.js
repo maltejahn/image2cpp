@@ -21,6 +21,12 @@ const settings = {
   invertColors: false,
   rotation: 0,
 };
+let filename ='';
+let fileextension='';
+let file_count=0;
+let pic_width=0;
+let pic_height=0;
+
 
 function bitswap(b) {
   if (settings.bitswap) {
@@ -188,6 +194,42 @@ const ConversionFunctions = {
     }
     return stringFromBytes;
   },
+  // Output the image as a string for 565 displays (horizontally)
+  // eslint-disable-next-line no-unused-vars
+  horizontal332(data, canvasWidth) {
+    let stringFromBytes = '';
+    let outputIndex = 0;
+
+    // format is RGBA, so move 4 steps per pixel
+    for (let index = 0; index < data.length; index += 4) {
+      // Get the RGB values
+      const r = data[index];
+      const g = data[index + 1];
+      const b = data[index + 2];
+      // calculate the 565 color value
+      // eslint-disable-next-line no-bitwise
+      const rgb = ((r & 0b11100000) << 0) | ((g & 0b11100000) >> 3) | ((b & 0b11000000) >> 6);
+      // Split up the color value in two bytes
+      // const firstByte = (rgb >> 8) & 0xff;
+      // const secondByte = rgb & 0xff;
+
+      let byteSet = bitswap(rgb).toString(16);
+      while (byteSet.length < 2) { byteSet = `0${byteSet}`; }
+      if (!settings.removeZeroesCommas) {
+        stringFromBytes += `0x${byteSet}, `;
+      } else {
+        stringFromBytes += byteSet;
+      }
+      // add newlines every 16 bytes
+      outputIndex++;
+      if (outputIndex >= 16) {
+        stringFromBytes += '\n';
+        outputIndex = 0;
+      }
+    }
+    return stringFromBytes;
+  },
+
   // Output the alpha mask as a string for horizontally drawing displays
   horizontalAlpha(data, canvasWidth) {
     let stringFromBytes = '';
@@ -231,7 +273,8 @@ const ConversionFunctions = {
     return stringFromBytes;
   },
 };
-settings.conversionFunction = ConversionFunctions.horizontal1bit;
+// changed to 565 as standard
+settings.conversionFunction = ConversionFunctions.horizontal565;
 
 // An images collection with helper methods
 function Images() {
@@ -264,7 +307,8 @@ const images = new Images();
 // Filetypes accepted by the file picker
 // const fileTypes = ['jpg', 'jpeg', 'png', 'bmp', 'gif', 'svg'];
 // Variable name, when "arduino code" is required
-const identifier = 'myBitmap';
+//const identifier = 'myBitmap';
+const identifier = '';
 
 // Invert the colors of the canvas
 function invert(canvas, ctx) {
@@ -316,7 +360,7 @@ function placeImage(_image) {
   const imgH = img.height;
 
   switch (settings.scale) {
-    case 1: // Original
+    case 2: // Original
       if (settings.centerHorizontally) {
         offsetX = Math.round((canvas.width - imgW) / 2);
       }
@@ -335,7 +379,7 @@ function placeImage(_image) {
         imgH,
       );
       break;
-    case 2: {
+    case 1: {
       // Fit (make as large as possible without changing ratio)
       const useRatio = Math.min(canvas.width / imgW, canvas.height / imgH);
       if (settings.centerHorizontally) {
@@ -525,6 +569,9 @@ function getImageType() {
     return 'uint16_t';
   } if (settings.conversionFunction === ConversionFunctions.horizontal888) {
     return 'unsigned long';
+  }
+  if (settings.conversionFunction === ConversionFunctions.horizontal332) {
+    return 'uint8_t';
   }
   return 'unsigned char';
 }
@@ -1003,6 +1050,53 @@ function generateOutputString() {
             }\n};\n`;
       break;
     }
+    case 'header_malte': {
+      let include_def=document.getElementById('include_input').value;
+      const varQuickArray = [];
+      let bytesUsed = 0;
+
+
+      // --
+      images.each((image) => {
+        code = imageToString(image);
+
+        outputString += include_def;
+
+        // Trim whitespace from end and remove trailing comma
+        code = code.replace(/,\s*$/, '');
+
+        code = `\t${code.split('\n').join('\n\t')}\n`;
+        // const variableCount = images.length() > 1 ? count++ : '';
+        const comment = `\n// '${image.glyph}', ${image.canvas.width}x${image.canvas.height}px\n`;
+        pic_height=image.canvas.height;
+        pic_width=image.canvas.width;
+        
+
+        
+        bytesUsed += code.split('\n').length * 16; // 16 bytes per line.
+
+        const varname = getIdentifier() + image.glyph.replace(/[^a-zA-Z0-9]/g, '_');
+        filename = getIdentifier() + image.glyph.replace(/[^a-zA-Z0-9]/g, '_');
+        varQuickArray.push(varname);
+        code = `${comment}const ${getImageType()} ${varname}_${fileextension}_Image_Table[] {\n${code}};\n`;
+        outputString += code;
+      });
+
+      
+      
+      varQuickArray.sort();
+      outputString += `\n// Array of all bitmaps for convenience. \n`;
+
+      outputString += `picture  ${filename}_Image = {\n
+      \t${filename}_Image_Table,\n\t`
+      outputString += pic_width;
+      outputString += `, // picture width\n\t`
+      outputString += pic_height;
+      outputString += `,// picture height\n\t`
+      outputString += `\n\t RGB565,
+    };\n`;
+      break;
+    }
     default: { // plain
       images.each((image) => {
         code = imageToString(image);
@@ -1114,6 +1208,6 @@ window.onload = () => {
   const fileInput = document.getElementById('file-input');
   fileInput.addEventListener('click', () => { this.value = null; }, false);
   fileInput.addEventListener('change', handleImageSelection, false);
-  document.getElementById('outputFormat').value = 'arduino';
+  document.getElementById('outputFormat').value = 'header_malte';
   document.getElementById('outputFormat').onchange();
 };
