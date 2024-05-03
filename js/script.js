@@ -1078,7 +1078,7 @@ function generateOutputString() {
         const varname = getIdentifier() + image.glyph.replace(/[^a-zA-Z0-9]/g, '_');
         filename = getIdentifier() + image.glyph.replace(/[^a-zA-Z0-9]/g, '_');
         varQuickArray.push(varname);
-        code = `${comment}const ${getImageType()} ${varname}_${fileextension}_Image_Table[] {\n${code}};\n`;
+        code = `${comment}const ${getImageType()} ${varname}_Image_Table[] = {\n${code}};\n`;
         outputString += code;
       });
 
@@ -1144,6 +1144,23 @@ function downloadBinFile() {
   const url = window.URL.createObjectURL(blob);
   a.href = url;
   a.download = `${getIdentifier()}.bin`;
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
+
+// eslint-disable-next-line no-unused-vars
+function download_header() {
+  navigator.clipboard.writeText(document.getElementById('code-output').value);
+  
+  const data = document.getElementById('code-output').value;
+  const a = document.createElement('a');
+  a.style = 'display: none';
+  document.body.appendChild(a);
+  const blob = new Blob([data], { type: 'octet/stream' });
+  const url = window.URL.createObjectURL(blob);
+  a.href = url;
+  a.download = `${filename}_${pic_width}x${pic_height}.h`;
   a.click();
   window.URL.revokeObjectURL(url);
 }
